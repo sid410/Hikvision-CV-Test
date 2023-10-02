@@ -18,6 +18,8 @@ CAM_IP=
 ```
 
 ### Test opencv Algorithms
+First connect to the wifi router the camera is connected, then run
+
 ```
 py .\cvTest.py
 ```
