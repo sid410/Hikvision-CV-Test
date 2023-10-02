@@ -26,3 +26,7 @@ py .\cvTest.py
 Press `1` to change between grayscale and background subtraction
 
 Press `q` to exit
+
+---
+### Accessing the Camera GUI
+To access the cam GUI and configuration settings, read the part about how to enable IE mode in Edge from this [link](https://windowsreport.com/your-browser-not-supported-hikvision/)
