@@ -13,6 +13,7 @@ from pathlib import Path
 from dotenv import load_dotenv
 
 from optical_flow import *
+from img_process import *
 
 class DummyTask:
     def __init__(self, data):
@@ -36,20 +37,21 @@ def main():
     # cap = cv.VideoCapture(0)
 
 
-    # img_processing = ImageProcessing()
+    img_processing = ImageProcessing()
     first_init = True
 
-    def process_frame(frame, t0, compute):
+    def process_frame(frame, t0, heavy, process):
         # some intensive computation...
         # frame = cv.medianBlur(frame, 19)
         # frame = cv.medianBlur(frame, 19)
 
-        # background subtraction
-        # frame = img_processing.update(frame)
-
-        if compute:
-            # optical flow
-            frame = opt_flow.get_optical_flow(frame)
+        if process:
+            if heavy:
+                # optical flow
+                frame = opt_flow.get_optical_flow(frame)
+            else:
+                # background subtraction
+                frame = img_processing.update(frame)
 
         return frame, t0
 
@@ -57,7 +59,8 @@ def main():
     pool = ThreadPool(processes = threadn)
     pending = deque()
 
-    cv_mode = True
+    cv_mode = False
+    heavy_mode = True
     threaded_mode = True
 
     latency = StatValue()
@@ -68,9 +71,10 @@ def main():
             res, t0 = pending.popleft().get()
             latency.update(clock() - t0)
             draw_str(res, (20, 20), "threaded      :  " + str(threaded_mode))
-            draw_str(res, (20, 40), "Heavy CV      :  " + str(cv_mode))
+            draw_str(res, (20, 40), "Process CV      :  " + str(cv_mode))
+            draw_str(res, (20, 60), "Heavy CV      :  " + str(heavy_mode))
             # draw_str(res, (20, 40), "latency        :  %.1f ms" % (latency.value*1000))
-            draw_str(res, (20, 60), "frame interval :  %.1f ms" % (frame_interval.value*1000))
+            draw_str(res, (20, 80), "frame interval :  %.1f ms" % (frame_interval.value*1000))
             cv.imshow('threaded video', res)
         if len(pending) < threadn:
             _ret, frame = cap.read()
@@ -83,14 +87,16 @@ def main():
             frame_interval.update(t - last_frame_time)
             last_frame_time = t
             if threaded_mode:
-                task = pool.apply_async(process_frame, (frame.copy(), t, cv_mode))
+                task = pool.apply_async(process_frame, (frame.copy(), t, heavy_mode, cv_mode))
             else:
-                task = DummyTask(process_frame(frame, t, cv_mode))
+                task = DummyTask(process_frame(frame, t, heavy_mode, cv_mode))
             pending.append(task)
         ch = cv.waitKey(1)
         if ch == ord(' '):
             threaded_mode = not threaded_mode
         if ch == ord('1'):
+            heavy_mode = not heavy_mode
+        if ch == ord('q'):
             cv_mode = not cv_mode
         if ch == 27:
             break
